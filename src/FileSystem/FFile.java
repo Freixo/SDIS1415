@@ -7,13 +7,8 @@ package FileSystem;
 
 import static FileSystem.UtilFunc.byteToString;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import static java.lang.Thread.sleep;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -27,12 +22,14 @@ public class FFile {
     public Chunk[] Chunks;
     public int Size;
     public String[] units = {"B", "KB", "MB", "GB"};
+    public int ReplicationDeg = 1;
 
-    public FFile(String fileName, String version) {
+    public FFile(String fileName, String version, int rep) {
 
         //File Found
         Name = fileName;
         Version = version;
+        ReplicationDeg = rep;
 
         MessageDigest md;
         try {
@@ -110,7 +107,7 @@ public class FFile {
 
     public void FillChunks() {
         int size;
-        
+
         for (size = 0; true; ++size) {
             try {
                 FileInputStream ifile = new FileInputStream("Chunks/" + FileId + "." + size);
@@ -136,16 +133,6 @@ public class FFile {
                 }
             }
         }
-    }
-
-    public static void main(String[] args) throws InterruptedException {
-        FFile f1 = new FFile("a.txt", "1.0");
-        FFile f2 = new FFile("AC.jpg", "1.0");
-        //f1.print();
-        f2.print();
-        //f2.ChunkstoFile();
-        f2.ChunkstoFile();
-
     }
 
 }
