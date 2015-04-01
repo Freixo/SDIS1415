@@ -16,13 +16,13 @@ import java.security.MessageDigest;
  */
 public class FFile {
 
-    public String Name;
-    public String Version;
-    public String FileId;
-    public Chunk[] Chunks;
-    public int Size;
-    public static String[] units = {"B", "KB", "MB", "GB"};
-    public int ReplicationDeg = 1;
+    private String Name;
+    private String Version;
+    private String FileId;
+    private Chunk[] Chunks;
+    private int Size;
+    private static String[] units = {"B", "KB", "MB", "GB"};
+    private int ReplicationDeg = 1;
 
     public FFile(String fileName, String version, int rep) {
 
@@ -56,7 +56,7 @@ public class FFile {
                 }
 
                 Chunks[i] = ch;
-                file.read(Chunks[i].byte_array);
+                file.read(Chunks[i].getBytes());
             }
 
             file.close();
@@ -85,7 +85,7 @@ public class FFile {
         try {
             for (int i = 0; i < Chunks.length; ++i) {
                 FileOutputStream ofile = new FileOutputStream("Chunks/" + FileId + "." + i);
-                ofile.write(Chunks[i].byte_array);
+                ofile.write(Chunks[i].getBytes());
                 ofile.close();
             }
         } catch (Exception e) {
@@ -97,7 +97,7 @@ public class FFile {
         try {
             FileOutputStream ofile = new FileOutputStream("Share/" + Name);
             for (int i = 0; i < Chunks.length; ++i) {
-                ofile.write(Chunks[i].byte_array);
+                ofile.write(Chunks[i].getBytes());
             }
             ofile.close();
         } catch (Exception e) {
@@ -126,7 +126,7 @@ public class FFile {
                     FileInputStream ifile = new FileInputStream("Chunks/" + FileId + "." + i);
                     Chunks[i] = new Chunk(ifile.available());
                     Size += ifile.available();
-                    ifile.read(Chunks[i].byte_array);
+                    ifile.read(Chunks[i].getBytes());
                     ifile.close();
                 } catch (Exception e) {
                     System.err.println("Couldn't open chunk no " + i);
@@ -144,4 +144,31 @@ public class FFile {
 
     }
 
+    public String getName(){
+        return Name;
+    }
+    
+    public String getVersion(){
+        return Version;
+    }
+    
+    public String getFileId(){
+        return FileId;
+    }
+    
+    public Chunk[] getChunks(){
+        return Chunks;
+    }
+    
+    public int getReplicationDeg(){
+        return ReplicationDeg;
+    }
+    
+    public int getSize(){
+        return Size;
+    }
+    
+    public void setReplicationDeg(int rd){
+        ReplicationDeg = rd;
+    }
 }

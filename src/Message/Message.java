@@ -88,11 +88,11 @@ public class Message {
 
         Message m = new Message(Type.PUTCHUNK);
 
-        m.setBody(f.Chunks[1].byte_array);
+        m.setBody(f.getChunks()[1].getBytes());
         m.setVersion(1, 0);
         m.setChunkNo(1);
-        m.setFileID(f.FileId);
-        m.setReplicationDeg(f.ReplicationDeg);
+        m.setFileID(f.getFileId());
+        m.setReplicationDeg(f.getReplicationDeg());
         
         System.out.println(m.createMessage());
     }
