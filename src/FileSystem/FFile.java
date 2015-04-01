@@ -171,4 +171,12 @@ public class FFile {
     public void setReplicationDeg(int rd){
         ReplicationDeg = rd;
     }
+
+	public boolean has(int chunkNO) {//TODO ??
+		for (int i = 0; i < Chunks.length; ++i) {
+			if(Chunks[i].chunkNO == chunkNO)
+				return true;
+		}
+		return false;
+	}
 }
