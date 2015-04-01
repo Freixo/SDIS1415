@@ -8,4 +8,8 @@ public class Chunk {
         byte_array = new byte[byteSize];
     }
 
+    void delete() {
+        byte_array = null;
+    }
+
 }

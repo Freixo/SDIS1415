@@ -21,7 +21,7 @@ public class FFile {
     public String FileId;
     public Chunk[] Chunks;
     public int Size;
-    public String[] units = {"B", "KB", "MB", "GB"};
+    public static String[] units = {"B", "KB", "MB", "GB"};
     public int ReplicationDeg = 1;
 
     public FFile(String fileName, String version, int rep) {
@@ -133,6 +133,15 @@ public class FFile {
                 }
             }
         }
+    }
+
+    public void delete() {
+        for (int i = 0; i < Chunks.length; ++i) {
+            Chunks[i].delete();
+        }
+
+        Chunks = null;
+
     }
 
 }
