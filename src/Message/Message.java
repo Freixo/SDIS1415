@@ -14,9 +14,9 @@ import FileSystem.UtilFunc;
  */
 public class Message {
 
-    private enum Type {
+    public enum Type {
 
-        PUTCHUNK, GETCHUNK, CHUNK, STORED, DELETE, REMOVED//, ISDELETED, HAVECHUNK, LISTENINGFOR
+        PUTCHUNK, GETCHUNK, DELETE, REMOVED, CHUNK, STORED//, ISDELETED, HAVECHUNK, LISTENINGFOR
     }
     public final Type type;
 
@@ -45,6 +45,10 @@ public class Message {
 
     public void setVersion(int i, int j) {
         version = i + "." + j;
+    }
+
+    public void setVersion(String v) {
+        version = v;
     }
 
     public void setReplicationDeg(int i) {
@@ -93,7 +97,7 @@ public class Message {
         m.setChunkNo(1);
         m.setFileID(f.getFileId());
         m.setReplicationDeg(f.getReplicationDeg());
-        
+
         System.out.println(m.createMessage());
     }
 }
