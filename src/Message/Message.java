@@ -31,6 +31,54 @@ public class Message {
         this.type = type;
     }
 
+    public Message(String msg) {
+        String[] vars = msg.split(" ");
+
+        switch (vars[0]) {
+            case "PUTCHUNK":
+                type = Type.PUTCHUNK;
+                version = vars[1];
+                fileID = vars[2];
+                chunkNo = Integer.getInteger(vars[3]);
+                replicationDeg = Integer.getInteger(vars[4]);
+                body = vars[5].replaceAll(CRLF, "").getBytes();
+                break;
+            case "GETCHUNK":
+                type = Type.GETCHUNK;
+                version = vars[1];
+                fileID = vars[2];
+                chunkNo = Integer.getInteger(vars[3]);
+                break;
+            case "DELETE":
+                type = Type.DELETE;
+                version = vars[1];
+                fileID = vars[2];
+                break;
+            case "REMOVED":
+                type = Type.REMOVED;
+                version = vars[1];
+                fileID = vars[2];
+                chunkNo = Integer.getInteger(vars[3]);
+                break;
+            case "CHUNK":
+                type = Type.CHUNK;
+                version = vars[1];
+                fileID = vars[2];
+                chunkNo = Integer.getInteger(vars[3]);
+                body = vars[4].replaceAll(CRLF, "").getBytes();
+                break;
+            case "STORED":
+                type = Type.STORED;
+                version = vars[1];
+                fileID = vars[2];
+                chunkNo = Integer.getInteger(vars[3]);
+                break;
+            default:
+                type = null;
+                break;
+        }
+    }
+
     public void setChunkNo(int c) {
         chunkNo = c;
     }
