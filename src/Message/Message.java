@@ -5,6 +5,7 @@
  */
 package Message;
 
+import FileSystem.Chunk;
 import FileSystem.FFile;
 import FileSystem.UtilFunc;
 
@@ -131,6 +132,22 @@ public class Message {
         }
         return str;
     }
+    
+    public String getFileID() {
+		return fileID;
+	}
+
+	public int getChunkNo() {
+		return chunkNo;
+	}
+
+	public byte[] getBody() {
+		return body;
+	}
+	
+	public Chunk getChunk() {
+		return new Chunk(chunkNo);//TODO create a chunk with the info message have
+	}
 
     public static void main(String[] args) throws InterruptedException {
 

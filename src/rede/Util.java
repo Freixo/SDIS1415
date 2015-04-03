@@ -49,14 +49,16 @@ public class Util {
 	private MC mc;
 	private MDB mdb;
 	private MDR mdr;
-	private Map<ChunkPair, Integer> chunksCount = new HashMap();
+	private Map<ChunkPair, Integer> chunksCount = new HashMap<ChunkPair, Integer>();
 	Random rand = new Random();
-	private Map<ChunkPair, List<Thread>> waiters = new HashMap();//esperar por um chunk
-	private Map<String, FFile> files = new HashMap();
-	private Map<ChunkPair, List<Thread>> waiters2 = new HashMap();//esperar por um putchunk
-	private Map<ChunkPair, List<Thread>> wwaiters = new HashMap();//esperar por um chunk (receber)
-	private Map<ChunkPair, Chunk> wwaited = new HashMap();// chunk esperado
+	private Map<ChunkPair, List<Thread>> waiters = new HashMap<ChunkPair, List<Thread>>();//esperar por um chunk
+	private Map<String, FFile> files = new HashMap<String, FFile>();
+	private Map<ChunkPair, List<Thread>> waiters2 = new HashMap<ChunkPair, List<Thread>>();//esperar por um putchunk
+	private Map<ChunkPair, List<Thread>> wwaiters = new HashMap<ChunkPair, List<Thread>>();//esperar por um chunk (receber)
+	private Map<ChunkPair, Chunk> wwaited = new HashMap<ChunkPair, Chunk>();// chunk esperado
 
+	public enum channel { MC, MDB, MDR};
+	
 	protected Util() {
 		// Exists only to defeat instantiation.
 	}
@@ -169,4 +171,16 @@ public class Util {
 			}
 		}
 	}
+	
+	public void sendMessage(channel c, String msg) {
+		switch (c) {
+			case MC:
+				mc.sendMessage(msg);
+			case MDB:
+				mdb.sendMessage(msg);
+			case MDR:
+				mdr.sendMessage(msg);
+		}
+	}
+	
 }
