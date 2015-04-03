@@ -122,6 +122,10 @@ public class Util {
 	public FFile getFile(String fileID) {
 		return files.get(fileID);
 	}
+        
+        public void addFile(FFile file){
+            files.put(file.getFileId(), file);
+        }
 
 	public void listMe2(ChunkPair pair, Thread thread) {
 		List<Thread> l = waiters2.containsKey(pair) ? waiters2.get(pair) : new ArrayList<Thread>();

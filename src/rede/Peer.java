@@ -13,9 +13,12 @@ import FileSystem.Chunk;
 import FileSystem.FFile;
 import static FileSystem.UtilFunc.byteToString;
 import Message.Message;
+import Message.Message.Type;
+import static java.lang.Thread.sleep;
 import java.security.MessageDigest;
 import java.util.Scanner;
 import java.util.Vector;
+import rede.Util.channel;
 
 // multicast
 abstract class M extends Thread {
@@ -245,6 +248,7 @@ class InputHandler {
     Message msg;
     Vector<String> messages;
     Scanner in = new Scanner(System.in);
+    Util util = new Util();
 
     public void getInput() {
 
@@ -263,7 +267,7 @@ class InputHandler {
             }
         } while (input > 4 || input < 1);
 
-        msg = new Message(Message.Type.values()[input - 1]);
+        msg = new Message(Type.values()[input - 1]);
 
         System.out.println("Qual o nome do ficheiro?");
         String name = in.next();
@@ -282,10 +286,9 @@ class InputHandler {
         msg.setVersion(version);
         int chunkNo = 0;
         int repDeg = 0;
-        byte[] body = {};
+        FFile file;
         switch (input) {
             case 1:
-
                 do {
                     System.out.println("Qual o numero de Réplicas pretende?");
                     try {
@@ -296,41 +299,41 @@ class InputHandler {
                     }
                 } while (input < 1);
                 msg.setReplicationDeg(repDeg);
-                FFile file = new FFile(name, version, repDeg);
-                 for(int i = 0 ; i < file.getChunks().length ; ++i){
-                     msg.setChunkNo(i);
-                     msg.setBody(file.getChunks()[i].getBytes());
-                     messages.add(msg.createMessage());
-                 }
+
+                file = new FFile(name, version, repDeg);
+                util.addFile(file);
+                for (int i = 0; i < file.getChunks().length; ++i) {
+                    msg.setChunkNo(i);
+                    msg.setBody(file.getChunks()[i].getBytes());
+                    messages.add(msg.createMessage());
+                }
+
+                for (int i = 0; i < messages.size(); ++i) {
+                    util.sendMessage(channel.MDB, messages.get(i));
+                    int time = 500;
+                    do {
+                        sleep(time);
+                        time *= 2;
+                    } while (util.getCount(new ChunkPair(file.getFileId(), chunkNo)) < repDeg && time <= 8000);
+                }
                 break;
             case 2:
-                do {
-                    System.out.println("Qual o numero da Chunk que pretende restaurar?");
-                    try {
-                        chunkNo = in.nextInt();
-                    } catch (Exception e) {
-                        System.err.println("Invalid Input");
-                        input = -1;
-                    }
-                } while (input < 0);
-                msg.setChunkNo(chunkNo);
-                messages.add(msg.createMessage());
+                file = util.getFile(msg.getFileID());
+                for (int i = 0; i < file.getChunks().length; ++i) {
+                    msg.setChunkNo(i);
+                    Util.getInstance().sendMessage(channel.MC, msg.createMessage());
+                }
                 break;
             case 3:
-                messages.add(msg.createMessage());
+                util.deleteFile(msg.getFileID());
+                Util.getInstance().sendMessage(channel.MC, msg.createMessage());
                 break;
             case 4:
-                do {
-                    System.out.println("Qual o numero da Chunk que pretende apagar?");
-                    try {
-                        chunkNo = in.nextInt();
-                    } catch (Exception e) {
-                        System.err.println("Invalid Input");
-                        input = -1;
-                    }
-                } while (input < 0);
-                msg.setChunkNo(chunkNo);
-                messages.add(msg.createMessage());
+                file = util.getFile(msg.getFileID());
+                for (int i = 0; i < file.getChunks().length; ++i) {
+                    msg.setChunkNo(i);
+                    Util.getInstance().sendMessage(channel.MC, msg.createMessage());
+                }
                 break;
             default:
                 break;
