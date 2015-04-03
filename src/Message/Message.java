@@ -146,7 +146,7 @@ public class Message {
 	}
 	
 	public Chunk getChunk() {
-		return new Chunk(chunkNo);//TODO create a chunk with the info message have
+		return new Chunk(chunkNo, body);//TODO create a chunk with the info message have
 	}
 
     public static void main(String[] args) throws InterruptedException {
@@ -165,4 +165,12 @@ public class Message {
 
         System.out.println(m.createMessage());
     }
+
+	public String getVersion() {
+		return this.version;
+	}
+
+	public int getDegree() {
+		return this.replicationDeg;
+	}
 }

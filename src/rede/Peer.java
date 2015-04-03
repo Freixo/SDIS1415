@@ -60,7 +60,7 @@ abstract class M extends Thread {
 
 class Handler extends Thread {
 	
-	String msg;
+	String msg_received;
 	Message m;
 	
 	public Handler(byte[] buffer) {
@@ -68,24 +68,24 @@ class Handler extends Thread {
 		int i = buffer.length-1;
 		while(buffer[i] == 0)//get the actual message size
 			i--;
-		msg = new String(buffer, 0, i+1);
-		m = new Message(msg);
+		msg_received = new String(buffer, 0, i+1);
+		m = new Message(msg_received);
 		start();
 	}
 	
 	public void run() {
 		//do something with message
-		if(msg.toUpperCase().startsWith("STORED"))
+		if(msg_received.toUpperCase().startsWith("STORED"))
 			handleStored();
-		else if(msg.toUpperCase().startsWith("GETCHUNK"))
+		else if(msg_received.toUpperCase().startsWith("GETCHUNK"))
 			handleGetChunk();
-		else if(msg.toUpperCase().startsWith("DELETE"))
+		else if(msg_received.toUpperCase().startsWith("DELETE"))
 			handleDelete();
-		else if(msg.toUpperCase().startsWith("REMOVED"))
+		else if(msg_received.toUpperCase().startsWith("REMOVED"))
 			handleRemoved();
-		else if(msg.toUpperCase().startsWith("PUTCHUNK"))
+		else if(msg_received.toUpperCase().startsWith("PUTCHUNK"))
 			handlePutChunk();
-		else if(msg.toUpperCase().startsWith("CHUNK"))
+		else if(msg_received.toUpperCase().startsWith("CHUNK"))
 			handleChunk();
 	}
 	
@@ -100,7 +100,7 @@ class Handler extends Thread {
 		String FileID=m.getFileID();
 		int ChunkNO=m.getChunkNo();
 		Util.getInstance().notifyPutChunk(new ChunkPair(FileID, ChunkNO));
-		if(Util.getInstance().getFile(FileID).has(ChunkNO)) {
+		if( ! Util.getInstance().getFile(FileID).has(ChunkNO)) {
 			try {
 				Thread.sleep(Util.getInstance().rand());
 				if(Util.getInstance().getCount(new ChunkPair(FileID, ChunkNO)) < Util.getInstance().getFile(FileID).getReplicationDeg())
@@ -112,12 +112,14 @@ class Handler extends Thread {
 	private void handleRemoved() {
 		String FileID=m.getFileID();
 		int ChunkNO=m.getChunkNo();
+		int repDeg = Util.getInstance().getFile(FileID).getReplicationDeg();
+		byte[] body = Util.getInstance().getFile(FileID).getChunkBody(ChunkNO);
 		int q = Util.getInstance().remove(new ChunkPair(FileID, ChunkNO));
-		if( q<Util.getInstance().getFile(FileID).getReplicationDeg()) {
+		if( q < repDeg && Util.getInstance().getFile(FileID).has(ChunkNO)) {
 			Util.getInstance().listMe2(new ChunkPair(FileID, ChunkNO), this);
 			try {
 				Thread.sleep(Util.getInstance().rand());
-				sendPutchunk();
+				sendPutchunk(repDeg, body);
 			} catch (InterruptedException e) { }
 		}
 	}
@@ -130,11 +132,13 @@ class Handler extends Thread {
 	private void handleGetChunk() {
 		String FileID=m.getFileID();
 		int ChunkNO=m.getChunkNo();
-		Util.getInstance().listMe(new ChunkPair(FileID, ChunkNO), this);
-		try {
-			Thread.sleep(Util.getInstance().rand());
-			sendChunk();
-		} catch (InterruptedException e) { }
+		if( Util.getInstance().getFile(FileID).has(ChunkNO)) {
+			Util.getInstance().listMe(new ChunkPair(FileID, ChunkNO), this);
+			try {
+				Thread.sleep(Util.getInstance().rand());
+				sendChunk();
+			} catch (InterruptedException e) { }
+		}
 	}
 
 	private void handleStored() {
@@ -145,25 +149,42 @@ class Handler extends Thread {
 
 	private void saveChunk() {
 		// TODO Auto-generated method stub
+		//guardar o ficheiro no pc!
+		Chunk c = new Chunk(m.getChunkNo(), m.getBody());
+		Util.getInstance().saveChunk(c, m.getFileID(), m.getDegree(), m.getVersion());
 		sendStored();
 	}
 	
 	private void sendStored() {
 		String FileID=m.getFileID();
 		int ChunkNO=m.getChunkNo();
+		//ao enviar tenho que incrementar o meu contador em 1 tambem.
 		Util.getInstance().add(new ChunkPair(FileID, ChunkNO));
-		// TODO Auto-generated method stub
-		
+		//enviar
+		Message msg = new Message(Message.Type.STORED);
+		msg.setVersion(m.getVersion());
+		msg.setFileID(FileID);
+		msg.setChunkNo(ChunkNO);
+		Util.getInstance().sendMessage(Util.channel.MC, msg.createMessage());
 	}
 
-	private void sendPutchunk() {
-		// TODO Auto-generated method stub
-		
+	private void sendPutchunk(int repDeg, byte[] body) {
+		Message msg = new Message(Message.Type.PUTCHUNK);
+		msg.setVersion(m.getVersion());
+		msg.setFileID(m.getFileID());
+		msg.setChunkNo(m.getChunkNo());
+		msg.setReplicationDeg(repDeg);
+		msg.setBody(body);
+		Util.getInstance().sendMessage(Util.channel.MDB, msg.createMessage());
 	}
 
 	private void sendChunk() {
-		// TODO Auto-generated method stub
-		
+		Message msg = new Message(Message.Type.PUTCHUNK);
+		msg.setVersion(m.getVersion());
+		msg.setFileID(m.getFileID());
+		msg.setChunkNo(m.getChunkNo());
+		msg.setBody(Util.getInstance().getFile(m.getFileID()).getChunkBody(m.getChunkNo()));
+		Util.getInstance().sendMessage(Util.channel.MDR, msg.createMessage());
 	}
 }
 
@@ -175,6 +196,7 @@ class MC extends M {
 	}
 	/*
 	public void run() {
+		super.run();
 	}*/
 }
 

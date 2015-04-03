@@ -6,9 +6,14 @@
 package FileSystem;
 
 import static FileSystem.UtilFunc.byteToString;
+
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.List;
+
+import Message.Message;
 
 /**
  *
@@ -19,7 +24,7 @@ public class FFile {
     private String Name;
     private String Version;
     private String FileId;
-    private Chunk[] Chunks;
+    private List<Chunk> Chunks;
     private int Size;
     private static String[] units = {"B", "KB", "MB", "GB"};
     private int ReplicationDeg = 1;
@@ -45,18 +50,18 @@ public class FFile {
 
             Size = file.available();
 
-            Chunks = new Chunk[file.available() / 64000 + 1];
+            Chunks = new ArrayList<Chunk>();//new Chunk[file.available() / 64000 + 1];
 
             for (int i = 0; file.available() > 0; ++i) {
                 Chunk ch;
                 if (file.available() > 64000) {
-                    ch = new Chunk(64000);
+                    ch = new Chunk(i, 64000);
                 } else {
-                    ch = new Chunk(file.available());
+                    ch = new Chunk(i, file.available());
                 }
 
-                Chunks[i] = ch;
-                file.read(Chunks[i].getBytes());
+                Chunks.add(ch);
+                file.read(Chunks.get(i).getBytes());
             }
 
             file.close();
@@ -68,7 +73,15 @@ public class FFile {
         }
     }
 
-    public void print() {
+    public FFile(String fileID2, int degree, String version2, Chunk c) {
+		// TODO Auto-generated constructor stub
+    	this.Chunks = new ArrayList<Chunk>();this.Chunks.add(c);
+    	this.FileId = fileID2;
+    	this.ReplicationDeg = degree;
+    	this.Version = version2;
+	}
+
+	public void print() {
         String _size;
         int i = 0;
         while (Size > Math.pow(1024, i) && i < 3) {
@@ -83,9 +96,9 @@ public class FFile {
 
     public void FiletoChunks() {
         try {
-            for (int i = 0; i < Chunks.length; ++i) {
+            for (int i = 0; i < Chunks.size(); ++i) {
                 FileOutputStream ofile = new FileOutputStream("Chunks/" + FileId + "." + i);
-                ofile.write(Chunks[i].getBytes());
+                ofile.write(Chunks.get(i).getBytes());
                 ofile.close();
             }
         } catch (Exception e) {
@@ -96,8 +109,8 @@ public class FFile {
     public void ChunkstoFile() {
         try {
             FileOutputStream ofile = new FileOutputStream("Share/" + Name);
-            for (int i = 0; i < Chunks.length; ++i) {
-                ofile.write(Chunks[i].getBytes());
+            for (int i = 0; i < Chunks.size(); ++i) {
+                ofile.write(Chunks.get(i).getBytes());
             }
             ofile.close();
         } catch (Exception e) {
@@ -120,13 +133,13 @@ public class FFile {
             System.err.println("Couldn't find Chunks");
 
         } else {
-            Chunks = new Chunk[size];
+            Chunks = new ArrayList<Chunk>();//[size];
             for (int i = 0; i < size; ++i) {
                 try {
                     FileInputStream ifile = new FileInputStream("Chunks/" + FileId + "." + i);
-                    Chunks[i] = new Chunk(ifile.available());
+                    Chunks.add(new Chunk(i, ifile.available()));
                     Size += ifile.available();
-                    ifile.read(Chunks[i].getBytes());
+                    ifile.read(Chunks.get(i).getBytes());
                     ifile.close();
                 } catch (Exception e) {
                     System.err.println("Couldn't open chunk no " + i);
@@ -136,10 +149,10 @@ public class FFile {
     }
 
     public void delete() {
-        for (int i = 0; i < Chunks.length; ++i) {
+        /*for (int i = 0; i < Chunks.length; ++i) {
             Chunks[i].delete();
         }
-
+        */
         Chunks = null;
 
     }
@@ -157,7 +170,7 @@ public class FFile {
     }
     
     public Chunk[] getChunks(){
-        return Chunks;
+        return (Chunk[]) Chunks.toArray();
     }
     
     public int getReplicationDeg(){
@@ -173,10 +186,22 @@ public class FFile {
     }
 
 	public boolean has(int chunkNO) {//TODO ??
-		for (int i = 0; i < Chunks.length; ++i) {
-			if(Chunks[i].chunkNO == chunkNO)
+		for (int i = 0; i < Chunks.size(); ++i) {
+			if(Chunks.get(i).chunkNO == chunkNO)
 				return true;
 		}
 		return false;
+	}
+
+	public byte[] getChunkBody(int chunkNO) {
+		for( Chunk c : this.Chunks) {
+			if( c.chunkNO == chunkNO)
+				return c.getBytes();
+		}
+		return null;
+	}
+
+	public void addChunk(Chunk c) {
+		this.Chunks.add(c);
 	}
 }

@@ -118,6 +118,7 @@ public class Util {
 		return count;
 	}
 
+	//e se nao existir!?!?!?TODO
 	public FFile getFile(String fileID) {
 		return files.get(fileID);
 	}
@@ -180,6 +181,15 @@ public class Util {
 				mdb.sendMessage(msg);
 			case MDR:
 				mdr.sendMessage(msg);
+		}
+	}
+
+	public void saveChunk(Chunk c, String fileID, int degree, String version) {
+		if(files.containsKey(fileID) && files.get(fileID).getVersion() == version) {
+			files.get(fileID).addChunk(c);
+		} else {
+			FFile file = new FFile( fileID, degree, version, c);
+			this.files.put(fileID, file);
 		}
 	}
 	
