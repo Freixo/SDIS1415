@@ -19,7 +19,7 @@ public class Message {
 
         PUTCHUNK, GETCHUNK, DELETE, REMOVED, CHUNK, STORED//, ISDELETED, HAVECHUNK, LISTENINGFOR
     }
-    public final Type type;
+    private final Type type;
 
     private static final String CRLF = "DA";
     private String fileID = null;

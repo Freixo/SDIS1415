@@ -22,4 +22,8 @@ public class Chunk {
         return byte_array;
     }
 
+	public int getChunkNO() {
+		return chunkNO;
+	}
+
 }

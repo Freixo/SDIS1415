@@ -122,15 +122,17 @@ public class Util {
 	public FFile getFile(String fileID) {
 		return files.get(fileID);
 	}
-        
-        public void addFile(FFile file){
-            files.put(file.getFileId(), file);
-        }
 
 	public void listMe2(ChunkPair pair, Thread thread) {
 		List<Thread> l = waiters2.containsKey(pair) ? waiters2.get(pair) : new ArrayList<Thread>();
 		l.add(thread);
 		waiters2.put(pair, l);
+	}
+	
+	public void listMeW(ChunkPair pair, Thread thread) {
+		List<Thread> l = wwaiters.containsKey(pair) ? wwaiters.get(pair) : new ArrayList<Thread>();
+		l.add(thread);
+		wwaiters.put(pair, l);
 	}
 
 	public void notifyPutChunk(ChunkPair chunkPair) {
@@ -195,6 +197,22 @@ public class Util {
 			FFile file = new FFile( fileID, degree, version, c);
 			this.files.put(fileID, file);
 		}
+		files.get(fileID).FiletoChunks();//TODO salvar penas o q pus agora!?
+	}
+
+	public void addFile(FFile file) {
+		files.put(file.getFileId(), file);
 	}
 	
+	public void finish() {
+		mc.finish();
+		mdr.finish();
+		mdb.finish();
+	}
+
+	public Chunk getChunk(ChunkPair chunkPair) {
+		Chunk ret = wwaited.get(chunkPair);
+		wwaited.remove(chunkPair);
+		return ret;
+	}
 }

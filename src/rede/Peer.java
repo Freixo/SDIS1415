@@ -13,12 +13,13 @@ import FileSystem.Chunk;
 import FileSystem.FFile;
 import static FileSystem.UtilFunc.byteToString;
 import Message.Message;
-import Message.Message.Type;
 import static java.lang.Thread.sleep;
+
 import java.security.MessageDigest;
 import java.util.Scanner;
 import java.util.Vector;
-import rede.Util.channel;
+
+//import com.sun.corba.se.impl.javax.rmi.CORBA.Util;
 
 // multicast
 abstract class M extends Thread {
@@ -151,8 +152,6 @@ class Handler extends Thread {
 	}
 
 	private void saveChunk() {
-		// TODO Auto-generated method stub
-		//guardar o ficheiro no pc!
 		Chunk c = new Chunk(m.getChunkNo(), m.getBody());
 		Util.getInstance().saveChunk(c, m.getFileID(), m.getDegree(), m.getVersion());
 		sendStored();
@@ -239,18 +238,10 @@ public class Peer extends Thread {
 	}
 	
 	public void run() {
-		
-	}
-}
 
-class InputHandler {
-
-    Message msg;
-    Vector<String> messages;
-    Scanner in = new Scanner(System.in);
-    Util util = new Util();
-
-    public void getInput() {
+	    Message msg;
+	    Vector<String> messages = new Vector<String>();
+	    Scanner in = new Scanner(System.in);
 
         int input;
         do {
@@ -267,7 +258,7 @@ class InputHandler {
             }
         } while (input > 4 || input < 1);
 
-        msg = new Message(Type.values()[input - 1]);
+        msg = new Message(Message.Type.values()[input - 1]);
 
         System.out.println("Qual o nome do ficheiro?");
         String name = in.next();
@@ -280,7 +271,7 @@ class InputHandler {
             System.err.println("Error digesting message");
             return;
         }
-        System.out.println("Qual a versÃ£o do ficheiro?");
+        System.out.println("Qual a versÃ£o do ficheiro?");//TODO isto é automatico! (ou nem e preciso pq so ha 1 versao)
         String version = in.next();
 
         msg.setVersion(version);
@@ -288,7 +279,7 @@ class InputHandler {
         int repDeg = 0;
         FFile file;
         switch (input) {
-            case 1:
+            case 1://TODO enviar delete de versões anteriores do ficheiro!!!
                 do {
                     System.out.println("Qual o numero de RÃ©plicas pretende?");
                     try {
@@ -301,7 +292,7 @@ class InputHandler {
                 msg.setReplicationDeg(repDeg);
 
                 file = new FFile(name, version, repDeg);
-                util.addFile(file);
+                Util.getInstance().addFile(file);//TODO guardar antes num map so para os do proprio user?
                 for (int i = 0; i < file.getChunks().length; ++i) {
                     msg.setChunkNo(i);
                     msg.setBody(file.getChunks()[i].getBytes());
@@ -309,35 +300,46 @@ class InputHandler {
                 }
 
                 for (int i = 0; i < messages.size(); ++i) {
-                    util.sendMessage(channel.MDB, messages.get(i));
+                    Util.getInstance().sendMessage(Util.channel.MDB, messages.get(i));
                     int time = 500;
                     do {
-                        sleep(time);
+                        try {
+							sleep(time);
+						} catch (InterruptedException e) { e.printStackTrace();}
                         time *= 2;
-                    } while (util.getCount(new ChunkPair(file.getFileId(), chunkNo)) < repDeg && time <= 8000);
+                    } while (Util.getInstance().getCount(new ChunkPair(file.getFileId(), chunkNo)) < repDeg && time <= 8000);
                 }
                 break;
             case 2:
-                file = util.getFile(msg.getFileID());
-                for (int i = 0; i < file.getChunks().length; ++i) {
-                    msg.setChunkNo(i);
-                    Util.getInstance().sendMessage(channel.MC, msg.createMessage());
+                file = Util.getInstance().getFile(msg.getFileID());
+                for (int i = 0; i < file.getChunks().length; ++i) {//TODO e ler o chunk?
+                    msg.setChunkNo(file.getChunks()[i].getChunkNO());
+                    Util.getInstance().listMeW(new ChunkPair(msg.getFileID(), msg.getChunkNo()), this);
+                    Util.getInstance().sendMessage(Util.channel.MC, msg.createMessage());
+                    try {
+						this.wait();
+					} catch (InterruptedException e) { e.printStackTrace();}
+                    Chunk asked = Util.getInstance().getChunk(new ChunkPair(msg.getFileID(), msg.getChunkNo()));
+                    //TODO guardar o chunk / FFile ou whatevar para ficar no pc!
                 }
                 break;
             case 3:
-                util.deleteFile(msg.getFileID());
-                Util.getInstance().sendMessage(channel.MC, msg.createMessage());
+                Util.getInstance().deleteFile(msg.getFileID());
+                Util.getInstance().sendMessage(Util.channel.MC, msg.createMessage());
                 break;
             case 4:
-                file = util.getFile(msg.getFileID());
+            	/*TODO remover chunk e nao o ficheiro inteiro!
+            	 * pedir qual e o chunk NO e apagar esse / enviar a mensagem sobre ESSE chunkNO
+            	 */
+                file = Util.getInstance().getFile(msg.getFileID());
                 for (int i = 0; i < file.getChunks().length; ++i) {
                     msg.setChunkNo(i);
-                    Util.getInstance().sendMessage(channel.MC, msg.createMessage());
+                    Util.getInstance().sendMessage(Util.channel.MC, msg.createMessage());
                 }
                 break;
             default:
                 break;
         }
 
-    }
+	}
 }

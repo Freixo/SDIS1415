@@ -7,6 +7,7 @@ package FileSystem;
 
 import static FileSystem.UtilFunc.byteToString;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.security.MessageDigest;
@@ -149,12 +150,11 @@ public class FFile {
     }
 
     public void delete() {
-        /*for (int i = 0; i < Chunks.length; ++i) {
-            Chunks[i].delete();
+    	for (int i = 0; i < Chunks.size(); ++i) {
+            File file = new File("Chunks/" + FileId + "." + String.valueOf(Chunks.get(i).getChunkNO()));
+            file.delete();
         }
-        */
         Chunks = null;
-
     }
 
     public String getName(){
