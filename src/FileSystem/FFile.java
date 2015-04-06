@@ -169,7 +169,7 @@ public class FFile {
     }
     
     public Chunk[] getChunks(){
-        return (Chunk[]) Chunks.toArray();
+        return Chunks.toArray(new Chunk[0]);
     }
     
     public int getReplicationDeg(){
