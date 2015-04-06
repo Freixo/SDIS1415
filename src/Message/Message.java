@@ -110,9 +110,10 @@ public class Message {
 
     public String createMessage() {
         String str = "";
+        
         switch (type) {
             case PUTCHUNK:
-                str = "PUTCHUNK " + version + " " + fileID + " " + chunkNo + " " + replicationDeg + " " + CRLF + CRLF + body;
+                str = "PUTCHUNK " + version + " " + fileID + " " + chunkNo + " " + replicationDeg + " " + CRLF + CRLF + UtilFunc.byteToString(body);
                 break;
             case STORED:
                 str = "STORED " + version + " " + fileID + " " + chunkNo + " " + CRLF + CRLF;
@@ -121,7 +122,7 @@ public class Message {
                 str = "GETCHUNK " + version + " " + fileID + " " + chunkNo + " " + CRLF + CRLF;
                 break;
             case CHUNK:
-                str = "CHUNK " + version + " " + fileID + " " + chunkNo + " " + CRLF + CRLF + body;
+                str = "CHUNK " + version + " " + fileID + " " + chunkNo + " " + CRLF + CRLF + UtilFunc.byteToString(body);
                 break;
             case DELETE:
                 str = "DELETE " + version + " " + fileID + " " + CRLF + CRLF;
@@ -130,6 +131,7 @@ public class Message {
             default:
                 break;
         }
+        System.out.println("Sending: " + str);
         return str;
     }
     
