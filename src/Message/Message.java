@@ -146,7 +146,7 @@ public class Message {
 	}
 	
 	public Chunk getChunk() {
-		return new Chunk(chunkNo, body);//TODO create a chunk with the info message have
+		return new Chunk(chunkNo, body);
 	}
 
     public static void main(String[] args) throws InterruptedException {

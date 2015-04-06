@@ -118,7 +118,7 @@ public class Util {
 		return count;
 	}
 
-	//e se nao existir!?!?!?TODO
+	public boolean haveFile(String fileID) { return files.containsKey(fileID);}
 	public FFile getFile(String fileID) {
 		return files.get(fileID);
 	}

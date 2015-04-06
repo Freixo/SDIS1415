@@ -75,7 +75,6 @@ public class FFile {
     }
 
     public FFile(String fileID2, int degree, String version2, Chunk c) {
-		// TODO Auto-generated constructor stub
     	this.Chunks = new ArrayList<Chunk>();this.Chunks.add(c);
     	this.FileId = fileID2;
     	this.ReplicationDeg = degree;
@@ -185,7 +184,7 @@ public class FFile {
         ReplicationDeg = rd;
     }
 
-	public boolean has(int chunkNO) {//TODO ??
+	public boolean has(int chunkNO) {
 		for (int i = 0; i < Chunks.size(); ++i) {
 			if(Chunks.get(i).chunkNO == chunkNO)
 				return true;

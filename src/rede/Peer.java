@@ -24,6 +24,7 @@ import java.util.Vector;
 // multicast
 abstract class M extends Thread {
 	
+	private static final int messageMaxSize = 120000;
 	protected MulticastSocket socket;
 	protected InetAddress group;
 	protected int port;
@@ -40,7 +41,7 @@ abstract class M extends Thread {
 	}
 	
 	public void run(){
-		byte[] buffer = new byte[Integer.MAX_VALUE-5];
+		byte[] buffer = new byte[messageMaxSize];
 		DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 		while(!finished) {
 			try {
@@ -104,7 +105,7 @@ class Handler extends Thread {
 		String FileID=m.getFileID();
 		int ChunkNO=m.getChunkNo();
 		Util.getInstance().notifyPutChunk(new ChunkPair(FileID, ChunkNO));
-		if( ! Util.getInstance().getFile(FileID).has(ChunkNO)) {
+		if( Util.getInstance().haveFile(FileID) && ! Util.getInstance().getFile(FileID).has(ChunkNO)) {
 			try {
 				Thread.sleep(Util.getInstance().rand());
 				if(Util.getInstance().getCount(new ChunkPair(FileID, ChunkNO)) < Util.getInstance().getFile(FileID).getReplicationDeg())
@@ -114,17 +115,19 @@ class Handler extends Thread {
 	}
 
 	private void handleRemoved() {
-		String FileID=m.getFileID();
-		int ChunkNO=m.getChunkNo();
-		int repDeg = Util.getInstance().getFile(FileID).getReplicationDeg();
-		byte[] body = Util.getInstance().getFile(FileID).getChunkBody(ChunkNO);
-		int q = Util.getInstance().remove(new ChunkPair(FileID, ChunkNO));
-		if( q < repDeg && Util.getInstance().getFile(FileID).has(ChunkNO)) {
-			Util.getInstance().listMe2(new ChunkPair(FileID, ChunkNO), this);
-			try {
-				Thread.sleep(Util.getInstance().rand());
-				sendPutchunk(repDeg, body);
-			} catch (InterruptedException e) { }
+		if( Util.getInstance().haveFile(m.getFileID())) {
+			String FileID=m.getFileID();
+			int ChunkNO=m.getChunkNo();
+			int repDeg = Util.getInstance().getFile(FileID).getReplicationDeg();
+			byte[] body = Util.getInstance().getFile(FileID).getChunkBody(ChunkNO);
+			int q = Util.getInstance().remove(new ChunkPair(FileID, ChunkNO));
+			if( q < repDeg && Util.getInstance().getFile(FileID).has(ChunkNO)) {
+				Util.getInstance().listMe2(new ChunkPair(FileID, ChunkNO), this);
+				try {
+					Thread.sleep(Util.getInstance().rand());
+					sendPutchunk(repDeg, body);
+				} catch (InterruptedException e) { }
+			}
 		}
 	}
 
@@ -136,7 +139,7 @@ class Handler extends Thread {
 	private void handleGetChunk() {
 		String FileID=m.getFileID();
 		int ChunkNO=m.getChunkNo();
-		if( Util.getInstance().getFile(FileID).has(ChunkNO)) {
+		if( Util.getInstance().haveFile(FileID) && Util.getInstance().getFile(FileID).has(ChunkNO)) {
 			Util.getInstance().listMe(new ChunkPair(FileID, ChunkNO), this);
 			try {
 				Thread.sleep(Util.getInstance().rand());
@@ -279,7 +282,7 @@ public class Peer extends Thread {
         int repDeg = 0;
         FFile file;
         switch (input) {
-            case 1://TODO enviar delete de versões anteriores do ficheiro!!!
+            case 1:
                 do {
                     System.out.println("Qual o numero de RÃ©plicas pretende?");
                     try {
@@ -290,6 +293,15 @@ public class Peer extends Thread {
                     }
                 } while (input < 1);
                 msg.setReplicationDeg(repDeg);
+
+                if( Util.getInstance().haveFile(msg.getFileID())) {
+	                Message deleteMsg = new Message(Message.Type.DELETE);
+	                deleteMsg.setFileID(msg.getFileID());
+	                deleteMsg.setVersion(Util.getInstance().getFile(msg.getFileID()).getVersion());
+	                Util.getInstance().sendMessage(Util.channel.MC, deleteMsg.createMessage());
+	                Util.getInstance().deleteFile(msg.getFileID());
+                }
+                //Util.getInstance().sendMessage(Util.channel.MC, msg.createMessage());//?
 
                 file = new FFile(name, version, repDeg);
                 Util.getInstance().addFile(file);//TODO guardar antes num map so para os do proprio user?
@@ -311,17 +323,19 @@ public class Peer extends Thread {
                 }
                 break;
             case 2:
-                file = Util.getInstance().getFile(msg.getFileID());
-                for (int i = 0; i < file.getChunks().length; ++i) {//TODO e ler o chunk?
-                    msg.setChunkNo(file.getChunks()[i].getChunkNO());
-                    Util.getInstance().listMeW(new ChunkPair(msg.getFileID(), msg.getChunkNo()), this);
-                    Util.getInstance().sendMessage(Util.channel.MC, msg.createMessage());
-                    try {
-						this.wait();
-					} catch (InterruptedException e) { e.printStackTrace();}
-                    Chunk asked = Util.getInstance().getChunk(new ChunkPair(msg.getFileID(), msg.getChunkNo()));
-                    //TODO guardar o chunk / FFile ou whatevar para ficar no pc!
-                }
+            	if( Util.getInstance().haveFile(msg.getFileID())) {//TODO mudar para uma lista que tenhas so os meus?
+	                file = Util.getInstance().getFile(msg.getFileID());
+	                for (int i = 0; i < file.getChunks().length; ++i) {
+	                    msg.setChunkNo(file.getChunks()[i].getChunkNO());
+	                    Util.getInstance().listMeW(new ChunkPair(msg.getFileID(), msg.getChunkNo()), this);
+	                    Util.getInstance().sendMessage(Util.channel.MC, msg.createMessage());
+	                    try {
+							this.wait();
+						} catch (InterruptedException e) { e.printStackTrace();}
+	                    Chunk asked = Util.getInstance().getChunk(new ChunkPair(msg.getFileID(), msg.getChunkNo()));
+	                    Util.getInstance().saveChunk(asked, msg.getFileID(), Util.getInstance().getFile(msg.getFileID()).getReplicationDeg(), msg.getVersion());
+	                }
+            	}
                 break;
             case 3:
                 Util.getInstance().deleteFile(msg.getFileID());
@@ -331,11 +345,14 @@ public class Peer extends Thread {
             	/*TODO remover chunk e nao o ficheiro inteiro!
             	 * pedir qual e o chunk NO e apagar esse / enviar a mensagem sobre ESSE chunkNO
             	 */
-                file = Util.getInstance().getFile(msg.getFileID());
-                for (int i = 0; i < file.getChunks().length; ++i) {
-                    msg.setChunkNo(i);
-                    Util.getInstance().sendMessage(Util.channel.MC, msg.createMessage());
-                }
+            	if( Util.getInstance().haveFile(msg.getFileID())){
+                	file = Util.getInstance().getFile(msg.getFileID());
+	                for (int i = 0; i < file.getChunks().length; ++i) {
+	                    msg.setChunkNo(i);
+	                    Util.getInstance().sendMessage(Util.channel.MC, msg.createMessage());
+	                }
+	                Util.getInstance().deleteFile(msg.getFileID());
+            	}
                 break;
             default:
                 break;

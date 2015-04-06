@@ -3,7 +3,7 @@ package FileSystem;
 public class Chunk {
 
     private byte[] byte_array;
-	public int chunkNO;//TODO ?
+	public int chunkNO;
 
     public Chunk(int num, int byteSize) {
         byte_array = new byte[byteSize];
