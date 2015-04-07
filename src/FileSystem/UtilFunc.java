@@ -9,4 +9,14 @@ public class UtilFunc {
         }
         return str.toString();
     }
+
+    public static byte[] stringToByte(String str) {
+        byte[] data = new byte[str.length()];
+
+        for (int i = 0; i < str.length(); i += 2) {
+            data[i / 2] = (byte) ((Character.digit(str.charAt(i), 16) << 4)
+                    + Character.digit(str.charAt(i + 1), 16));
+        }
+        return data;
+    }
 }

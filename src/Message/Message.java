@@ -8,11 +8,8 @@ package Message;
 import FileSystem.Chunk;
 import FileSystem.FFile;
 import FileSystem.UtilFunc;
+import java.time.Clock;
 
-/**
- *
- * @author Utilizador
- */
 public class Message {
 
     public enum Type {
@@ -21,18 +18,18 @@ public class Message {
     }
     private final Type type;
 
-    private static final String CRLF = "DA";
+    private static final String CRLF = "\r\n";
     private String fileID = null;
     private String version;
     private int chunkNo;
     private int replicationDeg;
-    private byte[] body = null;
+    private byte[] body = new byte[0];
 
     public Message(Type type) {
         this.type = type;
     }
 
-    public Message(String msg) {
+    public Message(String msg, byte[] b, int index) {
         String[] vars = msg.split(" ");
         switch (vars[0]) {
             case "PUTCHUNK":
@@ -41,7 +38,8 @@ public class Message {
                 fileID = vars[2];
                 chunkNo = Integer.valueOf(vars[3]);
                 replicationDeg = Integer.valueOf(vars[4]);
-                body = vars[5].substring(4, vars[5].length()).getBytes();
+                body = new byte[64000];
+                System.arraycopy(b, index, body, 0, body.length);
                 break;
             case "GETCHUNK":
                 type = Type.GETCHUNK;
@@ -65,7 +63,8 @@ public class Message {
                 version = vars[1];
                 fileID = vars[2];
                 chunkNo = Integer.valueOf(vars[3]);
-                body = vars[4].substring(4, vars[5].length()).getBytes();
+                body = new byte[64000];
+                System.arraycopy(b, index, body, 0, body.length);
                 break;
             case "STORED":
                 type = Type.STORED;
@@ -74,6 +73,7 @@ public class Message {
                 chunkNo = Integer.valueOf(vars[3]);
                 break;
             default:
+                System.err.println("Unknown Message Received!");
                 type = null;
                 break;
         }
@@ -107,11 +107,11 @@ public class Message {
         body = b;
     }
 
-    public String createMessage() {
+    public byte[] createMessage() {
         String str = "";
         switch (type) {
             case PUTCHUNK:
-                str = "PUTCHUNK " + version + " " + fileID + " " + chunkNo + " " + replicationDeg + " " + CRLF + CRLF + body;//UtilFunc.byteToString(body);
+                str = "PUTCHUNK " + version + " " + fileID + " " + chunkNo + " " + replicationDeg + " " + CRLF + CRLF;
                 break;
             case STORED:
                 str = "STORED " + version + " " + fileID + " " + chunkNo + " " + CRLF + CRLF;
@@ -120,7 +120,7 @@ public class Message {
                 str = "GETCHUNK " + version + " " + fileID + " " + chunkNo + " " + CRLF + CRLF;
                 break;
             case CHUNK:
-                str = "CHUNK " + version + " " + fileID + " " + chunkNo + " " + CRLF + CRLF + body;//UtilFunc.byteToString(body);
+                str = "CHUNK " + version + " " + fileID + " " + chunkNo + " " + CRLF + CRLF;
                 break;
             case DELETE:
                 str = "DELETE " + version + " " + fileID + " " + CRLF + CRLF;
@@ -130,7 +130,10 @@ public class Message {
                 break;
         }
         System.out.println("Sending message: "+str);
-        return str;
+        byte[] final_msg = new byte[str.getBytes().length + this.body.length];
+        System.arraycopy(str.getBytes(), 0, final_msg, 0, str.getBytes().length);
+        System.arraycopy(this.body, 0, final_msg, str.getBytes().length, this.body.length);
+        return final_msg;
     }
     
     public String getFileID() {

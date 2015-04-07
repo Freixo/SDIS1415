@@ -179,7 +179,7 @@ public class Util {
 		}
 	}
 	
-	public void sendMessage(channel c, String msg) {
+	public void sendMessage(channel c, byte[] msg) {
 		switch (c) {
 			case MC:
 				mc.sendMessage(msg);
